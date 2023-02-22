@@ -44,7 +44,7 @@ class PetFriends:
             result = res.text
         return status, result
 
-    def post_add_new_pet_No_PHOTO(self, auth_key: json, name: str, animal_type: str, age: int):
+    def post_add_new_pet_No_PHOTO(self, auth_key: json, name: str, animal_type: str, age):
         """Метод отправляет (постит) на сервер информацию о новом питомце name,animal_type, age(в виде number), (без фото) и возвращает статус
                 ответа сервера и результат в формате JSON с данными добавленного питомца"""
         headers = {'auth_key': auth_key['key']}
