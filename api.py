@@ -1,6 +1,7 @@
 import requests  # помогает осуществлять вызовы
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import json
+import pytest
 
 
 # Пишем api  библиотеку к веб приложению Pet Friends
@@ -8,6 +9,7 @@ class PetFriends:
     # сохраняем базовый url при инициализации
     def __init__(self):
         self.base_url = 'https://petfriends.skillfactory.ru'
+
 
     def get_api_key(self, email: str, password: str):
         '''Метод делает запрос к API сервера и возвращает стстус запроса и результата в формате JSON
@@ -126,3 +128,9 @@ class PetFriends:
         except:
             result = res.text
         return status, result
+
+
+
+
+
+
