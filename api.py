@@ -18,7 +18,7 @@ class PetFriends:
         headers = {
             'email': email,
             'password': password}
-        # формируем запрос с соответствующим методом  на сервер, присваиваем переменную
+        # формируем запрос с соответствующим методом на сервер, присваиваем переменную
         res = requests.get(self.base_url + '/api/key', headers=headers)
         # присваиваем переменной статус код ответа
         status = res.status_code
@@ -46,22 +46,25 @@ class PetFriends:
             result = res.text
         return status, result
 
-    def post_add_new_pet_No_PHOTO(self, auth_key: json, name: str, animal_type: str, age):
+    def post_add_new_pet_No_PHOTO(self, auth_key: json, name: str, animal_type: str, age: str) -> json:
         """Метод отправляет (постит) на сервер информацию о новом питомце name,animal_type, age(в виде number), (без фото) и возвращает статус
                 ответа сервера и результат в формате JSON с данными добавленного питомца"""
-        headers = {'auth_key': auth_key['key']}
-        # формируем тело запроса с полями
-        fields = {'name': name,
-                  'animal_type': animal_type,
-                  'age': age, }
+        data = MultipartEncoder(
+            fields={
+                'name': name,
+                'animal_type': animal_type,
+                'age': age
+            })
+        headers = {'auth_key': auth_key['key'], 'Content-Type': data.content_type}
         # отправляем запрос url+urn, заголовком(аут.ключом) и телом(параметрами нового питомца)
-        res = requests.post(self.base_url + '/api/create_pet_simple', headers=headers, data=fields)
+        res = requests.post(self.base_url + '/api/create_pet_simple', headers=headers, data=data)
         status = res.status_code
         result = ''
         try:
             result = res.json()
-        except:
+        except json.decoder.JSONDecodeError:
             result = res.text
+        print(result)
         return status, result
 
     def post_set_photo_pet(self, auth_key: json, pet_id: str, pet_photo: str) -> json:
@@ -110,7 +113,7 @@ class PetFriends:
         status = res.status_code
         return status
 
-    def put_update_pet(self, auth_key: json, pet_id: str, name: str, animal_type: str, age: int) -> json:
+    def put_update_pet(self, auth_key: json, pet_id: str, name: str, animal_type: str, age: str) -> json:
         """Метод обновляет информацию о питомце по конкретному id питомца ии возвращает статус
                 ответа сервера и результат в формате JSON с данными добавленного питомца"""
         data = {
