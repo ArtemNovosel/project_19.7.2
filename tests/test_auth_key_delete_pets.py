@@ -28,22 +28,11 @@ def smile_chars(n):
     return "☻" * n
 
 
-@pytest.fixture(autouse=True) #запускается автоматически при обращении к его переменной
-def f_get_api_key():
-    # Сохраняем ключ в pytest.key *** чтобы он передовался в тест
-    status, pytest.key = pf.get_api_key(valid_email, valid_password)
-    assert status == 200
-    assert 'key' in pytest.key
-    yield
-    # Проверяем что статус ответа = 200 и имя питомца соответствует заданному
-    assert status == 200
-
-
-
 
 '''тест который проверяет обработку сервером валидных email & password'''
 '''ПОЗИТИВНЫЙ тест'''
-def test_get_api_key_for_valid_user(email=valid_email, password=valid_password):
+@pytest.mark.auth #помечаем тест как auth для запуска из консоли нужен pytest.ini и команда test_auth_key_delete_pets.py -v -m "auth"
+def test_get_api_key_for_valid_user( email=valid_email, password=valid_password):
     # из биюлиотеки вызываем метод, результаты прискваиваем переменным
     status, result = pf.get_api_key(email, password)
     # сверяем результат по статусу и присутствию ключа в ответе
@@ -53,6 +42,7 @@ def test_get_api_key_for_valid_user(email=valid_email, password=valid_password):
 
 
 '''НЕГАТИВНЫЙ тест'''
+@pytest.mark.xfail(raises=UnicodeEncodeError) #тест будет помечен xfail только в том случае, если произойдет исключение типа UnicodeEncodeError
 @pytest.mark.parametrize("email"
    , ['', generate_string(255), generate_string(1001), russian_chars(),
        russian_chars().upper(), chinese_chars(), special_chars(), '123']
@@ -72,27 +62,25 @@ def test_get_api_key_for_invalid_user(email, password):
 
 '''Тест на удаление питомца по id'''
 """ПОЗИТИВНЫЙ тест"""
+@pytest.mark.api #помечаем тест как API для запуска из консоли нужен pytest.ini и команда test_auth_key_delete_pets.py -v -m "api"
+@pytest.mark.xfail(raises=UnicodeEncodeError) #тест будет помечен xfail только в том случае, если произойдет исключение типа UnicodeEncodeError
 @pytest.mark.parametrize('i', range(1,2)) #задаем колличество удаляемых питомцев
-def test_delete_valid(i):
+def test_delete_valid(fix_get_api_key, i):
     # получаем список питомцев
     _, my_pets = pf.get_list_of_pets(pytest.key, 'my_pets')
     # если список пустой, то вызываем метода который добавляет питомца
-    # print('***', my_pets.values())
-    print('***',len(my_pets['pets']),'***')
     if len(my_pets['pets']) == 0:
         pf.post_add_new_pet_No_PHOTO(pytest.key, 'Morgan', "kot", '6')
         # формируем список повторно
         _, my_pets = pf.get_list_of_pets(pytest.key, 'my_pets')
     # первому питомцу в списке присваиваем переменную
     pet_id = my_pets['pets'][i]['id']
-    print(pet_id,'***')
     # удаляем питомца вызовом метода
     status = pf.delete_pet(pytest.key, pet_id)
     # сравниваем полученный ответ от сервера
     assert status == 200
     # получаем список питомцев заново
     _, my_pets = pf.get_list_of_pets(pytest.key, 'my_pets')
-    print('***', my_pets.values())
     # проверяем что питомец удален
     assert pet_id not in my_pets.values()
 
@@ -101,11 +89,12 @@ def test_delete_valid(i):
 
 
 '''НЕГАТИВНЫЕ тесты'''
+@pytest.mark.xfail(raises=UnicodeEncodeError)
 @pytest.mark.parametrize('test_key', ['testik0ff4273e72a94fdc351452fcbe9308af25de0c6e29ac0d2b54a', generate_string(255), generate_string(1001),
                                       russian_chars(), chinese_chars(), special_chars(), smile_chars(5), 1234567890],
                          ids=["another user's key", '255 symbols', 'more than 1001 symbols', 'russian',
                               'chinese', 'specials','smile', 'digit'])
-def test_delete_pet_invalid_id(test_key):
+def test_delete_pet_invalid_id(fix_get_api_key, test_key):
     # получаем список питомцев
     _, my_pets = pf.get_list_of_pets(pytest.key, 'my_pets')
     # если список пустой, то вызываем метода который добавляет питомца

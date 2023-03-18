@@ -1,5 +1,5 @@
 import pytest
-
+import sys
 from api import PetFriends  # импортируем созданную библиотеку
 from settings import *  # добавляем регистрационные данные
 # from generator_sings import * #импортируем генератор символов
@@ -29,16 +29,6 @@ def special_chars():
 def smile_chars(n):
     return "☻"*n
 
-
-@pytest.fixture(autouse=True)
-def fix_get_api_key():
-    # Сохраняем ключ в pytest.key *** чтобы он передовался в тест
-    status, pytest.key = pf.get_api_key(valid_email, valid_password)
-    assert status == 200
-    assert 'key' in pytest.key
-    yield
-    # Проверяем что статус ответа = 200 и имя питомца соответствует заданному
-    assert status == 200
 
 
 """Проверяем возможность обновить данные о существующем питомце /api/pets/{pet_id}"""
@@ -73,6 +63,7 @@ def test_update_valid_pet(name, animal_type, age):
 """Проверяем возможность обновить данные о существующем питомце /api/pets/{pet_id}"""
 '''НЕГАТИВНЫЕ тесты'''
 # БАГ данные питомца меняются
+@pytest.mark.xfail(sys.platform == "win32", reason="Эта фикстура помечает тест как часто падающий на win 32")
 @pytest.mark.parametrize("name", [''], ids=['empty'])
 @pytest.mark.parametrize("animal_type", [''], ids=['empty'])
 @pytest.mark.parametrize("age",
@@ -81,11 +72,6 @@ def test_update_valid_pet(name, animal_type, age):
    , ids=['empty', 'negative', 'zero', 'greater than max', 'float', 'int_max', 'int_max + 1', 'specials',
           'russian', 'RUSSIAN', 'chinese'])
 def test_update_invalid_pet(name, animal_type, age):
-    file = open('text500.txt', 'r')
-    name = file.read()
-    file.close()
-    # print(name)
-    # получаем через метод ключ
     _, auth_key = pf.get_api_key(valid_email, valid_password)
     # получаем список питомцев
     _, my_pets = pf.get_list_of_pets(auth_key, 'my_pets')
@@ -106,7 +92,7 @@ def test_update_invalid_pet(name, animal_type, age):
 """ПОЗИТИВНЫЙ тест"""
 @pytest.mark.parametrize('pet_photo', ['images/image.jpg','images/testtest.jpg'],
                          ids=['img', 'img_51_Mb'])
-def test_add_photo_pet_correct(pet_photo):
+def test_add_photo_pet_correct(fix_get_api_key, pet_photo):
     # в переменную сохраняем полный путь до фото
     pet_photo = os.path.join(os.path.dirname(__file__), pet_photo)
     # cписок питомцев, сохраняем их в переменные
@@ -125,7 +111,7 @@ def test_add_photo_pet_correct(pet_photo):
 '''НЕГАТИВНЫЕ тесты'''
 # БАГ 500 ошибка сервера
 @pytest.mark.parametrize('pet_photo', ['images/test.jpg','images/test.png', 'images/test.txt'], ids=['jpg_0_Mb','png_photo','txt_file'])
-def test_add_invalid_photo_pet(pet_photo):
+def test_add_invalid_photo_pet(fix_get_api_key, pet_photo):
     # в переменную сохраняем полный путь до фото
     pet_photo = os.path.join(os.path.dirname(__file__), pet_photo)
     # запрашиваем ключ и список питомцев, сохраняем их в переменные

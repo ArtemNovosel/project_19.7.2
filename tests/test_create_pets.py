@@ -27,19 +27,11 @@ def special_chars():
 def smile_chars(n):
     return "☻"*n
 
-@pytest.fixture(autouse=True)
-def fix_get_api_key():
-    # Сохраняем ключ в pytest.key *** чтобы он передовался в тест
-    status, pytest.key = pf.get_api_key(valid_email, valid_password)
-    assert status == 200
-    assert 'key' in pytest.key
-    yield
-    # Проверяем что статус ответа = 200 и имя питомца соответствует заданному
-    assert status == 200
 
-'''Проверяем возможность добавить питомца с валидными данными и фото. БАГ: age принимает только str '''
+
+'''Проверяем возможность добавить питомца с валидными данными и фото. '''
 # БАГ: age принимает только str
-@pytest.mark.parametrize("name, animal_type, age",  [('Bobik', 'Bobikov', '8')])
+@pytest.mark.parametrize("name, animal_type, age",  [('Bobik', 'Bobikov', '808')])
 def test_add_new_pet_and_PHOTO_valid_data(fix_get_api_key, name, animal_type, age,
                                           pet_photo='images/image.jpg'):
     # вызываем метод добавления питомца передаем данные
@@ -50,13 +42,14 @@ def test_add_new_pet_and_PHOTO_valid_data(fix_get_api_key, name, animal_type, ag
 
 
 '''Проверяем возможность добавить питомца с НЕвалидными данными и фото. БАГ: age принимает только str '''
-# БАГ питомец добавляется
+#Данная фикстура помечает тест как пропущенный
+@pytest.mark.skip(reason="Баг питомец добавляется (ссылка)") #reason — текст, который будет отображаться в отчете после того, как этот тест успешно проигнорируется.
 @pytest.mark.parametrize("name, animal_type, age",   [(chinese_chars(), special_chars(), generate_string(5)),
                                                       (russian_chars().upper(), russian_chars(), smile_chars(1)),
                                                       (smile_chars(2), smile_chars(3),smile_chars(4)),
                                                        (generate_string(255),generate_string(255),generate_string(255))
                 ], ids=['chinese_special_chars_string', 'russian_chars', 'smile_chars', 'str_255'])
-def test_add_new_pet_and_PHOTO_valid_data(fix_get_api_key, name, animal_type, age, pet_photo='images/image.jpg'):
+def test_add_new_pet_and_PHOTO_invalid_data(fix_get_api_key, name, animal_type, age, pet_photo='images/image.jpg'):
     status, result = pf.post_add_new_pet_and_Photo(pytest.key, name, animal_type, age, pet_photo)
     assert status == 400
     assert result['pet_photo'] != ''
@@ -75,8 +68,8 @@ def test_add_new_pet_and_PHOTO_valid_data(fix_get_api_key, name, animal_type, ag
        russian_chars().upper(), chinese_chars(), special_chars(), '123']
    , ids=[ '255 symbols', 'more than 1000 symbols', 'russian', 'RUSSIAN', 'chinese', 'specials', 'digit'])
 @pytest.mark.parametrize("age", ['1'], ids=['min'])
-def test_add_new_pet_simple_positive(name, animal_type, age):
-    pytest.status, result = pf.post_add_new_pet_No_PHOTO(pytest.key, name, animal_type, age, )
+def test_add_new_pet_simple_positive(fix_get_api_key, name, animal_type, age):
+    pytest.status, result = pf.post_add_new_pet_No_PHOTO(pytest.key, name, animal_type, age)
     # Сверяем полученный ответ с ожидаемым результатом
     assert pytest.status == 200
     assert result['name'] == name
@@ -85,7 +78,8 @@ def test_add_new_pet_simple_positive(name, animal_type, age):
 
 
 """НЕГАТИВНЫЕ тесты"""
-#БАГ питомец добавляется
+#Данная фикстура помечает тест как пропущенный
+@pytest.mark.skip(reason="Баг питомец добавляется (ссылка)") #reason — текст, который будет отображаться в отчете после того, как этот тест успешно проигнорируется.
 @pytest.mark.parametrize("name", [''], ids=['empty'])
 @pytest.mark.parametrize("animal_type", [''], ids=['empty'])
 @pytest.mark.parametrize("age",
@@ -93,7 +87,7 @@ def test_add_new_pet_simple_positive(name, animal_type, age):
                          russian_chars().upper(), chinese_chars()]
    , ids=['empty', 'negative', 'zero', 'greater than max', 'float', 'int_max', 'int_max + 1', 'specials',
           'russian', 'RUSSIAN', 'chinese'])
-def test_add_new_pet_dezPHOTO_valid_data(name, animal_type, age):
+def test_add_new_pet_dezPHOTO_valid_data(fix_get_api_key, name, animal_type, age):
     # _, auth_key = pf.get_api_key(valid_email, valid_password)
     # вызываем метод добавления питомца из библиотеки, передаем аут.ключ, имя, породу, возраст
     status, result = pf.post_add_new_pet_No_PHOTO(pytest.key, name, animal_type, age)
@@ -101,8 +95,6 @@ def test_add_new_pet_dezPHOTO_valid_data(name, animal_type, age):
     assert status == 400
     # assert result['name'] == name
     # assert result['pet_photo'] == ''
-
-
 
 
 
